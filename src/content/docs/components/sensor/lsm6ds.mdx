@@ -1,0 +1,257 @@
+---
+description: "Instructions for setting up LSM6DS family Accelerometer and Gyroscope sensors."
+title: "LSM6DS Accelerometer/Gyroscope Sensor"
+---
+
+import APIRef from '@components/APIRef.astro';
+
+The `lsm6ds` sensor platform allows you to use LSM6DS family Accelerometer/Gyroscope sensors with ESPHome. This component supports multiple sensor variants and communication interfaces:
+
+**Supported Sensors:**
+- **LSM6DSOX** - 6-axis IMU with machine learning core ([datasheet](https://www.st.com/resource/en/datasheet/lsm6dsox.pdf))
+- **LSM6DS3TR-C** - Ultra-low-power 6-axis IMU ([datasheet](https://www.st.com/resource/en/datasheet/lsm6ds3tr-c.pdf))
+- **LSM6DSO32** - 6-axis IMU with extended accelerometer range ([datasheet](https://www.st.com/resource/en/datasheet/lsm6dso32.pdf))
+
+**Communication Interfaces:**
+- I²C (requires [I²C Bus](/components/i2c) component)
+- SPI (requires [SPI Bus](/components/spi) component)
+
+## Usage
+
+The LSM6DS component supports two configuration patterns:
+
+### Pattern 1: All-in-One (Recommended)
+
+Configure the sensor with all outputs directly in the component block:
+
+```yaml
+# Example configuration entry (I²C)
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+lsm6ds_i2c:
+  id: imu_sensor
+  address: 0x6B
+  accel_range: 4G
+  gyro_range: 500DPS
+  accel_odr: 104HZ
+  gyro_odr: 104HZ
+  update_interval: 50ms
+  accel_x:
+    name: "Accel X"
+  accel_y:
+    name: "Accel Y"
+  accel_z:
+    name: "Accel Z"
+  gyro_x:
+    name: "Gyro X"
+  gyro_y:
+    name: "Gyro Y"
+  gyro_z:
+    name: "Gyro Z"
+  temperature:
+    name: "IMU Temperature"
+```
+
+### Pattern 2: Hub + Sensor Platform
+
+Configure the hub separately, then add sensor outputs under the sensor platform:
+
+```yaml
+# Example configuration entry (I²C with hub pattern)
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+
+lsm6ds_i2c:
+  id: imu_hub
+  address: 0x6B
+  accel_range: 4G
+  gyro_range: 500DPS
+  accel_odr: 104HZ
+  gyro_odr: 104HZ
+  update_interval: 50ms
+
+sensor:
+  - platform: lsm6ds_i2c
+    lsm6ds_id: imu_hub
+    accel_x:
+      name: "Accel X"
+    gyro_x:
+      name: "Gyro X"
+    temperature:
+      name: "IMU Temperature"
+```
+
+### SPI Configuration
+
+```yaml
+# Example configuration entry (SPI)
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+lsm6ds_spi:
+  id: imu_sensor
+  cs_pin: GPIO5
+  accel_range: 4G
+  gyro_range: 500DPS
+  accel_odr: 104HZ
+  gyro_odr: 104HZ
+  update_interval: 50ms
+  accel_x:
+    name: "Accel X"
+  # ... other sensors
+```
+
+## Configuration variables
+
+### I²C Hub Configuration (`lsm6ds_i2c`)
+
+- **address** (*Optional*, int): Manually specify the I²C address of the sensor.
+  - `0x6A` (default) - SDO/SA0 pin LOW
+  - `0x6B` - SDO/SA0 pin HIGH
+
+- **accel_range** (*Optional*, string): Accelerometer full-scale range. Defaults to `2G`.
+  - `2G` - ±2g
+  - `4G` - ±4g
+  - `8G` - ±8g
+  - `16G` - ±16g
+
+- **gyro_range** (*Optional*, string): Gyroscope full-scale range. Defaults to `250DPS`.
+  - `125DPS` - ±125 degrees per second
+  - `250DPS` - ±250 degrees per second
+  - `500DPS` - ±500 degrees per second
+  - `1000DPS` - ±1000 degrees per second
+  - `2000DPS` - ±2000 degrees per second
+
+- **accel_odr** (*Optional*, string): Accelerometer output data rate. Defaults to `104HZ`.
+  Options: `12.5HZ`, `26HZ`, `52HZ`, `104HZ`, `208HZ`, `416HZ`, `833HZ`, `1660HZ`, `3330HZ`, `6660HZ`
+
+- **gyro_odr** (*Optional*, string): Gyroscope output data rate. Defaults to `104HZ`.
+  Options: `12.5HZ`, `26HZ`, `52HZ`, `104HZ`, `208HZ`, `416HZ`, `833HZ`, `1660HZ`, `3330HZ`, `6660HZ`
+
+- **accel_x** (*Optional*): Use the X-Axis of the Accelerometer. All options from [Sensor](/components/sensor).
+- **accel_y** (*Optional*): Use the Y-Axis of the Accelerometer. All options from [Sensor](/components/sensor).
+- **accel_z** (*Optional*): Use the Z-Axis of the Accelerometer. All options from [Sensor](/components/sensor).
+- **gyro_x** (*Optional*): Use the X-Axis of the Gyroscope. All options from [Sensor](/components/sensor).
+- **gyro_y** (*Optional*): Use the Y-Axis of the Gyroscope. All options from [Sensor](/components/sensor).
+- **gyro_z** (*Optional*): Use the Z-Axis of the Gyroscope. All options from [Sensor](/components/sensor).
+- **temperature** (*Optional*): Use the internal temperature of the sensor. All options from [Sensor](/components/sensor).
+- **update_interval** (*Optional*, [Time](/guides/configuration-types#time)): The interval to check the sensor. Defaults to `60s`.
+- **id** (*Optional*, [ID](/guides/configuration-types#id)): Manually specify the ID used for code generation.
+- All other options from [I²C Device](/components/i2c#i2c-device).
+
+### SPI Hub Configuration (`lsm6ds_spi`)
+
+All the same options as I²C except:
+- **cs_pin** (*Required*, [Pin](/guides/configuration-types#pin)): The SPI chip select pin.
+- **address** option is not available (SPI uses CS pin instead).
+- All other options from [SPI Device](/components/spi#spi-device).
+
+### Sensor Platform Configuration
+
+When using the hub + sensor platform pattern, use `platform: lsm6ds_i2c` or `platform: lsm6ds_spi`:
+
+- **lsm6ds_id** (*Required*, [ID](/guides/configuration-types#id)): The ID of the LSM6DS hub component.
+- **accel_x**, **accel_y**, **accel_z**, **gyro_x**, **gyro_y**, **gyro_z**, **temperature**: Same as hub configuration.
+
+## Hardware Connections
+
+### I²C Connection
+
+```
+LSM6DS     ESP32/ESP8266
+------     -------------
+VCC    ->  3.3V
+GND    ->  GND
+SDA    ->  GPIO21 (or your configured SDA pin)
+SCL    ->  GPIO22 (or your configured SCL pin)
+SDO    ->  GND (for address 0x6A) or 3.3V (for address 0x6B)
+```
+
+### SPI Connection
+
+```
+LSM6DS     ESP32
+------     -----
+VCC    ->  3.3V
+GND    ->  GND
+SCK    ->  GPIO18 (or your configured CLK pin)
+MOSI   ->  GPIO23 (or your configured MOSI pin)
+MISO   ->  GPIO19 (or your configured MISO pin)
+CS     ->  GPIO5 (or your configured CS pin)
+```
+
+## Sensor Variant Detection
+
+The component automatically detects which LSM6DS variant is connected by reading the WHO_AM_I register:
+- **LSM6DSOX**: WHO_AM_I = 0x6C
+- **LSM6DS3TR-C**: WHO_AM_I = 0x6A
+- **LSM6DSO32**: WHO_AM_I = 0x69
+
+If a different value is detected, an error will be logged and the sensor will not initialize.
+
+## Technical Notes
+
+### Units and Conversion
+
+- **Accelerometer**: Output is in meters per second squared (m/s²)
+- **Gyroscope**: Output is in degrees per second (°/s)
+- **Temperature**: Output is in degrees Celsius (°C)
+
+The component automatically applies the appropriate sensitivity scaling based on the configured ranges.
+
+### Output Data Rate (ODR)
+
+The accelerometer and gyroscope can be configured independently with different ODRs. Higher ODRs provide faster sensor updates but consume more power. For most applications, `104HZ` provides a good balance.
+
+### Performance Considerations
+
+- **I²C Speed**: The LSM6DS supports I²C speeds up to 400 kHz (Fast mode). Configure your I²C bus accordingly for best performance.
+- **SPI Speed**: The LSM6DS supports SPI speeds up to 10 MHz.
+- **Update Interval**: Set `update_interval` based on your application needs. Faster updates consume more CPU and power.
+
+## Example: Motion Detection
+
+```yaml
+lsm6ds_i2c:
+  id: motion_sensor
+  address: 0x6B
+  accel_range: 2G
+  gyro_range: 250DPS
+  update_interval: 20ms
+  accel_x:
+    name: "Motion X"
+    id: accel_x
+  accel_y:
+    name: "Motion Y"
+    id: accel_y
+  accel_z:
+    name: "Motion Z"
+    id: accel_z
+
+# Calculate motion magnitude
+sensor:
+  - platform: template
+    name: "Motion Magnitude"
+    lambda: |-
+      float x = id(accel_x).state;
+      float y = id(accel_y).state;
+      float z = id(accel_z).state;
+      return sqrt(x*x + y*y + z*z);
+    update_interval: 20ms
+```
+
+## See Also
+
+- [Sensor Component](/components/sensor)
+- [Sensor Filters](/components/sensor#sensor-filters)
+- [I²C Bus](/components/i2c)
+- [SPI Bus](/components/spi)
+- [Template Sensor](/components/sensor/template/)
+- <APIRef text="lsm6ds_base" path="lsm6ds_base" />
+- <APIRef text="lsm6ds_i2c" path="lsm6ds_i2c" />
+- <APIRef text="lsm6ds_spi" path="lsm6ds_spi" />
