@@ -39,19 +39,19 @@ lsm6ds_i2c:
   gyro_odr: 104HZ
   update_interval: 50ms
   accel_x:
-    name: "Accel X"
+    name: "LSM6DS Accel X"
   accel_y:
-    name: "Accel Y"
+    name: "LSM6DS Accel Y"
   accel_z:
-    name: "Accel Z"
+    name: "LSM6DS Accel Z"
   gyro_x:
-    name: "Gyro X"
+    name: "LSM6DS Gyro X"
   gyro_y:
-    name: "Gyro Y"
+    name: "LSM6DS Gyro Y"
   gyro_z:
-    name: "Gyro Z"
+    name: "LSM6DS Gyro Z"
   temperature:
-    name: "IMU Temperature"
+    name: "LSM6DS Temperature"
 ```
 
 ### Pattern 2: Hub + Sensor Platform
@@ -77,11 +77,19 @@ sensor:
   - platform: lsm6ds_i2c
     lsm6ds_id: imu_hub
     accel_x:
-      name: "Accel X"
+      name: "LSM6DS Accel X"
+    accel_y:
+      name: "LSM6DS Accel Y"
+    accel_z:
+      name: "LSM6DS Accel Z"
     gyro_x:
-      name: "Gyro X"
+      name: "LSM6DS Gyro X"
+    gyro_y:
+      name: "LSM6DS Gyro Y"
+    gyro_z:
+      name: "LSM6DS Gyro Z"
     temperature:
-      name: "IMU Temperature"
+      name: "LSM6DS Temperature"
 ```
 
 ### SPI Configuration
@@ -102,8 +110,19 @@ lsm6ds_spi:
   gyro_odr: 104HZ
   update_interval: 50ms
   accel_x:
-    name: "Accel X"
-  # ... other sensors
+    name: "LSM6DS Accel X"
+  accel_y:
+    name: "LSM6DS Accel Y"
+  accel_z:
+    name: "LSM6DS Accel Z"
+  gyro_x:
+    name: "LSM6DS Gyro X"
+  gyro_y:
+    name: "LSM6DS Gyro Y"
+  gyro_z:
+    name: "LSM6DS Gyro Z"
+  temperature:
+    name: "LSM6DS Temperature"
 ```
 
 ## Configuration variables
@@ -214,35 +233,129 @@ The accelerometer and gyroscope can be configured independently with different O
 - **SPI Speed**: The LSM6DS supports SPI speeds up to 10 MHz.
 - **Update Interval**: Set `update_interval` based on your application needs. Faster updates consume more CPU and power.
 
-## Example: Motion Detection
+## Advanced Examples
+
+### All Configuration Options
 
 ```yaml
+# Complete configuration showing all available options
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  scan: true
+
 lsm6ds_i2c:
-  id: motion_sensor
+  id: lsm6ds_sensor
+  address: 0x6B  # Options: 0x6A (SDO low) or 0x6B (SDO high)
+  
+  # Accelerometer configuration
+  accel_range: 4G     # Options: 2G, 4G, 8G, 16G
+  accel_odr: 104HZ    # Options: 12.5HZ, 26HZ, 52HZ, 104HZ, 208HZ, 416HZ, 833HZ, 1660HZ, 3330HZ, 6660HZ
+  
+  # Gyroscope configuration
+  gyro_range: 500DPS  # Options: 125DPS, 250DPS, 500DPS, 1000DPS, 2000DPS
+  gyro_odr: 104HZ     # Options: 12.5HZ, 26HZ, 52HZ, 104HZ, 208HZ, 416HZ, 833HZ, 1660HZ, 3330HZ, 6660HZ
+  
+  # Polling interval
+  update_interval: 50ms
+  
+  # All available sensor outputs
+  accel_x:
+    name: "LSM6DS Accel X"
+    id: lsm6ds_accel_x
+    filters:
+      - sliding_window_moving_average:
+          window_size: 5
+          send_every: 5
+  accel_y:
+    name: "LSM6DS Accel Y"
+    id: lsm6ds_accel_y
+  accel_z:
+    name: "LSM6DS Accel Z"
+    id: lsm6ds_accel_z
+  gyro_x:
+    name: "LSM6DS Gyro X"
+    id: lsm6ds_gyro_x
+  gyro_y:
+    name: "LSM6DS Gyro Y"
+    id: lsm6ds_gyro_y
+  gyro_z:
+    name: "LSM6DS Gyro Z"
+    id: lsm6ds_gyro_z
+  temperature:
+    name: "LSM6DS Temperature"
+    id: lsm6ds_temp
+```
+
+### SPI with All Options
+
+```yaml
+# Complete SPI configuration
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+lsm6ds_spi:
+  id: lsm6ds_sensor
+  cs_pin: GPIO5
+  
+  # Same configuration options as I²C
+  accel_range: 16G    # Using maximum range
+  gyro_range: 2000DPS # Using maximum range
+  accel_odr: 416HZ    # Higher sampling rate
+  gyro_odr: 416HZ
+  update_interval: 10ms
+  
+  # All sensor outputs
+  accel_x:
+    name: "LSM6DS Accel X"
+  accel_y:
+    name: "LSM6DS Accel Y"
+  accel_z:
+    name: "LSM6DS Accel Z"
+  gyro_x:
+    name: "LSM6DS Gyro X"
+  gyro_y:
+    name: "LSM6DS Gyro Y"
+  gyro_z:
+    name: "LSM6DS Gyro Z"
+  temperature:
+    name: "LSM6DS Temperature"
+```
+
+### Motion Magnitude Calculation
+
+```yaml
+# Calculate total acceleration magnitude from sensor data
+lsm6ds_i2c:
+  id: lsm6ds_sensor
   address: 0x6B
   accel_range: 2G
   gyro_range: 250DPS
   update_interval: 20ms
   accel_x:
-    name: "Motion X"
+    name: "LSM6DS Accel X"
     id: accel_x
   accel_y:
-    name: "Motion Y"
+    name: "LSM6DS Accel Y"
     id: accel_y
   accel_z:
-    name: "Motion Z"
+    name: "LSM6DS Accel Z"
     id: accel_z
 
-# Calculate motion magnitude
+# Calculate total acceleration magnitude
 sensor:
   - platform: template
-    name: "Motion Magnitude"
+    name: "LSM6DS Acceleration Magnitude"
     lambda: |-
       float x = id(accel_x).state;
       float y = id(accel_y).state;
       float z = id(accel_z).state;
       return sqrt(x*x + y*y + z*z);
     update_interval: 20ms
+    unit_of_measurement: "m/s²"
+    accuracy_decimals: 2
 ```
 
 ## See Also
